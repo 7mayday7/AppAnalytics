@@ -1,0 +1,34 @@
+version: "3.9"
+
+volumes:
+  postgres_db_data:
+    driver: local
+
+services:
+  app:
+    image: demo/asp_core:1
+    build: ./
+    ports:
+      - "8080:80"
+      - "8443:80"
+    environment:
+      - DB_CONNECTION_STRING=Host=postgres_db;Database=analytics_db;Username=user;Password=password
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+        
+  postgres_db:
+    image: postgres
+    volumes:
+      - postgres_db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: analytics_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    
